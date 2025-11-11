@@ -93,7 +93,7 @@ input_video = cv2.VideoCapture(video_path)
 
 # Setup video sink for saving the annotated video
 video_info = sv.VideoInfo.from_video_path(video_path)
-with sv.VideoSink('/content/drive/MyDrive/detection and counting project/output_2line.mp4', video_info) as sink:
+with sv.VideoSink('/content/drive/MyDrive/detection and counting project/output_2lines.mp4', video_info) as sink:
 
     while input_video.isOpened():
         success, frame = input_video.read()
@@ -165,6 +165,7 @@ with sv.VideoSink('/content/drive/MyDrive/detection and counting project/output_
 # Release the input video
 input_video.release()
 print("Processing complete! Output saved as 'output_video.mp4'.")
+
 
 
 
