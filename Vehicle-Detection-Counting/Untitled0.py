@@ -62,7 +62,6 @@ model.track(source=input_video, save=True,  project=output_folder, conf=0.3, iou
 
 
 """TRACKING AND COUNTING"""
-
 import cv2
 from collections import defaultdict
 import supervision as sv
@@ -75,9 +74,18 @@ model = YOLO('yolov8n.pt')
 Start = sv.Point(182, 254)
 End = sv.Point(462, 254)
 
+start_sideline = sv.Point(198,250)
+end_sideline = sv.Point(238, 202)
+
 # Dictionaries to store tracking history and crossed objects
-track_history = defaultdict(list)
-crossed_object = {}
+track_history = defaultdict(lambda : [])
+
+#dictionary for the main line
+crossed_object_main = {}
+
+#dictionary for the sideline
+crossed_object_sideline = {}
+
 
 # Path to input video
 video_path = "/content/drive/MyDrive/detection and counting project/d.mp4"
@@ -85,7 +93,7 @@ input_video = cv2.VideoCapture(video_path)
 
 # Setup video sink for saving the annotated video
 video_info = sv.VideoInfo.from_video_path(video_path)
-with sv.VideoSink('/content/drive/MyDrive/detection and counting project/output_video.mp4', video_info) as sink:
+with sv.VideoSink('/content/drive/MyDrive/detection and counting project/output_2line.mp4', video_info) as sink:
 
     while input_video.isOpened():
         success, frame = input_video.read()
@@ -117,10 +125,18 @@ with sv.VideoSink('/content/drive/MyDrive/detection and counting project/output_
             if len(track) > 30:  # Keep last 30 positions
                 track.pop(0)
 
-            # Check if object crossed the line
+            # Check if object crossed the main line
             if Start.x < x < End.x and abs(y - Start.y) < 5:
-                if track_id not in crossed_object:
-                    crossed_object[track_id] = True
+                if track_id not in crossed_object_main:
+                    crossed_object_main[track_id] = True
+
+            # Check if object crossed the sideline
+            if start_sideline.x < x < end_sideline.x and min(start_sideline.y, end_sideline.y) < y < max(start_sideline.y, end_sideline.y):
+                if track_id not in crossed_object_sideline :
+                    crossed_object_sideline[track_id] = True
+
+
+            
 
                 # Annotate the object as crossed
                 cv2.rectangle(
@@ -133,18 +149,15 @@ with sv.VideoSink('/content/drive/MyDrive/detection and counting project/output_
 
         # Draw the counting line
         cv2.line(annotated_frame, (Start.x, Start.y), (End.x, End.y), (0, 255, 0), 2)
+        cv2.line(annotated_frame, (start_sideline.x, start_sideline.y), (end_sideline.x, end_sideline.y), (0,0,255), 2)
 
         # Show count of objects crossed
-        count_text = f"Objects crossed: {len(crossed_object)}"
-        cv2.putText(
-            annotated_frame,
-            count_text,
-            (10, 30),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            1,
-            (0, 255, 0),
-            2
-        )
+        count_main_text = f"Objects crossed main line: {len(crossed_object_main)}"
+        count_sideline_text = f"Objects crossed sideline: {len(crossed_object_sideline)}"
+
+
+        cv2.putText(annotated_frame,count_main_text,(10, 30),cv2.FONT_HERSHEY_SIMPLEX,1,(0, 255, 0),2 )
+        cv2.putText(annotated_frame, count_sideline_text, (10,70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
 
         # Write annotated frame to output video
         sink.write_frame(annotated_frame)
@@ -152,6 +165,7 @@ with sv.VideoSink('/content/drive/MyDrive/detection and counting project/output_
 # Release the input video
 input_video.release()
 print("Processing complete! Output saved as 'output_video.mp4'.")
+
 
 
 
